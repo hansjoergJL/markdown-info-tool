@@ -3,17 +3,22 @@
 # Define the info directory - use environment variable if set, otherwise use default
 INFO_DIR="${INFO_BASE_DIR:-$HOME/Development/info}"
 
+# Define the editor - use environment variable if set, otherwise use nano
+INFO_EDITOR="${INFO_EDITOR:-nano}"
+
 # Create the info directory if it doesn't exist
 mkdir -p "$INFO_DIR"
 
 # Handle 'help' command or no arguments
 if [ "$1" == "help" ] || [ "$#" -eq 0 ]; then
-    echo "info Version 1.2.0   (c) Joedike, JL Software Solutions"
+    echo "info Version 1.3.0   (c) Joedike, JL Software Solutions"
     echo "Usage: info [filename.md | ./filename.md] {line of text} | show [search string] | edit | list | delete | help"
     echo "       Use double apostrophes surrounding the line of text to prevent misinterpretations."
     echo ""
     echo "Info Directory: $INFO_DIR"
     echo "Set INFO_BASE_DIR environment variable to use a different directory."
+    echo "Editor: $INFO_EDITOR"
+    echo "Set INFO_EDITOR environment variable to use a different editor."
     echo ""
     echo "Commands:"
     printf "  %-40s %s\n" "{line of text}" "Append content to the common file ({INFO_BASE_DIR}/common.md)"
@@ -21,8 +26,8 @@ if [ "$1" == "help" ] || [ "$#" -eq 0 ]; then
     printf "  %-40s %s\n" "./{filename.md} {line of text}" "Append content to a specific file in the current directory"
     printf "  %-40s %s\n" "show {search string}" "Show content of the common file, optionally filtered by a search string"
     printf "  %-40s %s\n" "[./]{filename.md} show {search string}" "Show content of a specific file, optionally filtered by a search string"
-    printf "  %-40s %s\n" "edit" "Open the common.md file in {INFO_BASE_DIR} in nano"
-    printf "  %-40s %s\n" "[./]{filename.md} edit" "Open a specific file in nano"
+    printf "  %-40s %s\n" "edit" "Open the common.md file in {INFO_BASE_DIR} with {INFO_EDITOR}"
+    printf "  %-40s %s\n" "[./]{filename.md} edit" "Open a specific file with {INFO_EDITOR}"
     printf "  %-40s %s\n" "list" "List all .md files in {INFO_BASE_DIR}"
     printf "  %-40s %s\n" "delete" "Delete the last line from the common file"
     printf "  %-40s %s\n" "[./]{filename.md} delete" "Delete the last line from a specific file"
@@ -95,15 +100,15 @@ fi
 
 # Handle 'edit' command
 if [ "$1" == "edit" ]; then
-    nano "$INFO_DIR/common.md"
+    "$INFO_EDITOR" "$INFO_DIR/common.md"
     exit 0
 fi
 
 if [[ "$1" == *.md && "$2" == "edit" ]]; then
     if [[ "$1" == ./* ]]; then
-        nano "$1"
+        "$INFO_EDITOR" "$1"
     else
-        nano "$INFO_DIR/$1"
+        "$INFO_EDITOR" "$INFO_DIR/$1"
     fi
     exit 0
 fi
