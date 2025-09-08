@@ -21,7 +21,7 @@ The Info Script is a bash utility that provides a simple interface for quickly c
 ### Quick Install
 ```bash
 # Download the script
-curl -O https://raw.githubusercontent.com/your-username/info-script/main/info
+curl -O https://raw.githubusercontent.com/hansjoergJL/markdown-info-tool/main/info
 
 # Make it executable
 chmod +x info
