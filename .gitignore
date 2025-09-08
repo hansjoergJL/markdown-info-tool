@@ -1,0 +1,73 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*~
+*.tmp
+*.temp
+*.swp
+*.swo
+.*.swp
+.*.swo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+.vim/
+.nvim/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Log files
+*.log
+logs/
+
+# Testing and development
+test/
+tests/
+*.test
+test_*
+
+# Build artifacts (if any)
+build/
+dist/
+*.tar.gz
+*.zip
+
+# Documentation build artifacts
+docs/_build/
+*.pdf
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Cache directories
+.cache/
+*.cache
+
+# Runtime files
+*.pid
+*.lock
+
+# Personal notes or development files
+TODO
+NOTES
+notes.md
+scratch.*
+dev.*
+
+# Any local info storage (to avoid committing actual data)
+info_data/
+*.info

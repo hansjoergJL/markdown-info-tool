@@ -1,0 +1,158 @@
+#!/bin/bash
+
+# Define the info directory - use environment variable if set, otherwise use default
+INFO_DIR="${INFO_BASE_DIR:-$HOME/Development/info}"
+
+# Create the info directory if it doesn't exist
+mkdir -p "$INFO_DIR"
+
+# Handle 'help' command or no arguments
+if [ "$1" == "help" ] || [ "$#" -eq 0 ]; then
+    echo "info Version 1.2.0   (c) Joedike, JL Software Solutions"
+    echo "Usage: info [filename.md | ./filename.md] {line of text} | show [search string] | edit | list | delete | help"
+    echo "       Use double apostrophes surrounding the line of text to prevent misinterpretations."
+    echo ""
+    echo "Info Directory: $INFO_DIR"
+    echo "Set INFO_BASE_DIR environment variable to use a different directory."
+    echo ""
+    echo "Commands:"
+    printf "  %-40s %s\n" "{line of text}" "Append content to the common file ({INFO_BASE_DIR}/common.md)"
+    printf "  %-40s %s\n" "{filename.md} {line of text}" "Append content to a specific file in {INFO_BASE_DIR}/"
+    printf "  %-40s %s\n" "./{filename.md} {line of text}" "Append content to a specific file in the current directory"
+    printf "  %-40s %s\n" "show {search string}" "Show content of the common file, optionally filtered by a search string"
+    printf "  %-40s %s\n" "[./]{filename.md} show {search string}" "Show content of a specific file, optionally filtered by a search string"
+    printf "  %-40s %s\n" "edit" "Open the common.md file in {INFO_BASE_DIR} in nano"
+    printf "  %-40s %s\n" "[./]{filename.md} edit" "Open a specific file in nano"
+    printf "  %-40s %s\n" "list" "List all .md files in {INFO_BASE_DIR}"
+    printf "  %-40s %s\n" "delete" "Delete the last line from the common file"
+    printf "  %-40s %s\n" "[./]{filename.md} delete" "Delete the last line from a specific file"
+    printf "  %-40s %s\n" "help" "Show this help message"
+    echo ""
+    exit 0
+fi
+
+# Handle 'list' command
+if [ "$1" == "list" ]; then
+    echo "Available .md files in $INFO_DIR:"
+    echo ""
+    if [ -d "$INFO_DIR" ]; then
+        # List files with sizes and modification dates, excluding dot files and README.md
+        find "$INFO_DIR" -name "*.md" -type f | grep -v -E '/(\..*\.md|README\.md)$' | while read -r file; do
+            filename=$(basename "$file")
+            filesize=$(ls -lh "$file" | awk '{print $5}')
+            filedate=$(ls -l "$file" | awk '{print $6, $7, $8}')
+            printf "  %-25s %6s  %s\n" "$filename" "$filesize" "$filedate"
+        done | sort
+    else
+        echo "  Info directory does not exist yet."
+    fi
+    echo ""
+    exit 0
+fi
+
+# Handle 'delete' command
+if [ "$1" == "delete" ]; then
+    TARGET_FILE="$INFO_DIR/common.md"
+    if [ -f "$TARGET_FILE" ]; then
+        # Check if file is not empty
+        if [ -s "$TARGET_FILE" ]; then
+            # Remove last line using sed
+            sed -i '' '$d' "$TARGET_FILE"
+            echo "Deleted last line from: common.md"
+        else
+            echo "File is empty, nothing to delete."
+        fi
+    else
+        echo -e "\033[0;31mError: common.md does not exist.\033[0m"
+        exit 1
+    fi
+    exit 0
+fi
+
+# Handle 'delete' command for specific .md files
+if [[ "$1" == *.md && "$2" == "delete" ]]; then
+    if [[ "$1" == ./* ]]; then
+        TARGET_FILE="$1"
+    else
+        TARGET_FILE="$INFO_DIR/$1"
+    fi
+    
+    if [ -f "$TARGET_FILE" ]; then
+        # Check if file is not empty
+        if [ -s "$TARGET_FILE" ]; then
+            # Remove last line using sed
+            sed -i '' '$d' "$TARGET_FILE"
+            echo "Deleted last line from: $(basename "$TARGET_FILE")"
+        else
+            echo "File is empty, nothing to delete."
+        fi
+    else
+        echo -e "\033[0;31mError: $(basename "$TARGET_FILE") does not exist.\033[0m"
+        exit 1
+    fi
+    exit 0
+fi
+
+# Handle 'edit' command
+if [ "$1" == "edit" ]; then
+    nano "$INFO_DIR/common.md"
+    exit 0
+fi
+
+if [[ "$1" == *.md && "$2" == "edit" ]]; then
+    if [[ "$1" == ./* ]]; then
+        nano "$1"
+    else
+        nano "$INFO_DIR/$1"
+    fi
+    exit 0
+fi
+
+# Handle 'show' command with optional search string
+if [ "$1" == "show" ]; then
+    if [ -n "$2" ]; then
+        grep -iE "$(echo "$2" | sed 's/ /|/g')" "$INFO_DIR/common.md"
+    else
+        cat "$INFO_DIR/common.md"
+    fi
+    exit 0
+fi
+
+# Handle 'show' command for a specific .md file with optional search string
+if [[ "$1" == *.md && "$2" == "show" ]]; then
+    if [[ "$1" == ./* ]]; then
+        if [ -n "$3" ]; then
+            grep -iE "$(echo "$3" | sed 's/ /|/g')" "$1"
+        else
+            cat "$1"
+        fi
+    else
+        if [ -n "$3" ]; then
+            grep -iE "$(echo "$3" | sed 's/ /|/g')" "$INFO_DIR/$1"
+        else
+            cat "$INFO_DIR/$1"
+        fi
+    fi
+    exit 0
+fi
+
+# Check the first argument for the .md extension
+if [[ "$1" == *.md ]]; then
+    if [[ "$1" == ./* ]]; then
+        FILENAME="$1"
+    else
+        FILENAME="$INFO_DIR/$1"
+    fi
+    CONTENT="${*:2}"
+else
+    FILENAME="$INFO_DIR/common.md"
+    CONTENT="$*"
+fi
+
+# Append the content to the file
+if echo "$CONTENT" >> "$FILENAME"; then
+    echo "Saved to: $(basename "$FILENAME")"
+else
+    echo -e "\033[0;31mError: Could not write to file.\033[0m"
+    exit 1
+fi
