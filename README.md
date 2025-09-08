@@ -54,6 +54,18 @@ INFO_BASE_DIR="/path/to/my/notes" info "my note"
 export INFO_BASE_DIR="/path/to/my/notes"
 ```
 
+### Custom Editor
+Set the `INFO_EDITOR` environment variable to use a different editor (default: nano):
+
+```bash
+# Temporary override
+INFO_EDITOR="vim" info edit
+
+# Permanent setting (add to ~/.bashrc, ~/.zshrc, etc.)
+export INFO_EDITOR="vim"        # Use vim
+export INFO_EDITOR="code"       # Use VS Code
+export INFO_EDITOR="emacs"      # Use Emacs
+
 ## Usage
 
 ### Basic Commands
@@ -191,7 +203,7 @@ The script includes comprehensive error handling:
 - **1.1.0**: Added `delete` command for content management
 - **1.1.1**: Improved file filtering to exclude project files
 - **1.2.0**: Added configurable directory support via environment variables
-
+- **1.3.0**: Added configurable editor support via INFO_EDITOR environment variable
 ## Contributing
 
 1. Fork the repository
