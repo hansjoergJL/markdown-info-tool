@@ -19,6 +19,7 @@ The Info Script is a bash utility that provides a simple interface for quickly c
 ## Installation
 
 ### Quick Install
+
 ```bash
 # Download the script
 curl -O https://raw.githubusercontent.com/hansjoergJL/markdown-info-tool/main/info
@@ -31,6 +32,7 @@ sudo mv info /usr/local/bin/info
 ```
 
 ### Manual Install
+
 1. Download or clone this repository
 2. Copy the `info` script to a directory in your PATH:
    ```bash
@@ -41,9 +43,11 @@ sudo mv info /usr/local/bin/info
 ## Configuration
 
 ### Default Directory
+
 By default, the script uses `~/Development/info/` as the storage directory.
 
 ### Custom Directory
+
 Set the `INFO_BASE_DIR` environment variable to use a different location:
 
 ```bash
@@ -55,9 +59,10 @@ export INFO_BASE_DIR="/path/to/my/notes"
 ```
 
 ### Custom Editor
+
 Set the `INFO_EDITOR` environment variable to use a different editor (default: nano):
 
-```bash
+````bash
 # Temporary override
 INFO_EDITOR="vim" info edit
 
@@ -73,6 +78,10 @@ export INFO_EDITOR="emacs"      # Use Emacs
 ```bash
 # Show help and current configuration
 info help
+info --help
+
+# Show version
+info --version
 
 # List all available markdown files
 info list
@@ -85,7 +94,7 @@ info docker.md "Docker container restart command: docker restart container_name"
 
 # Note to local file in current directory
 info ./project-notes.md "Meeting notes from today"
-```
+````
 
 ### Viewing Content
 
@@ -95,12 +104,14 @@ info show
 
 # Search within default file
 info show "docker"
+info search "docker"
 
 # Show specific file
 info network.md show
 
 # Search within specific file
 info network.md show "IP address"
+info network.md search "IP address"
 ```
 
 ### Editing Files
@@ -136,11 +147,12 @@ info docker.md delete
 ## Examples
 
 ### Quick Reference System
+
 ```bash
 # System administration notes
 info ssh.md "SSH tunnel: ssh -L 8080:localhost:80 user@server"
 info network.md "Check open ports: netstat -tuln"
-info docker.md "Remove all containers: docker rm \$(docker ps -aq)"
+info docker.md "Remove all containers: docker rm $(docker ps -aq)"
 
 # Development notes
 info git.md "Undo last commit: git reset --soft HEAD~1"
@@ -152,11 +164,12 @@ info project.md "Bug fix deployed to staging"
 ```
 
 ### Multi-Machine Setup
+
 ```bash
 # Work machine
 export INFO_BASE_DIR="$HOME/work-notes"
 
-# Personal machine  
+# Personal machine
 export INFO_BASE_DIR="$HOME/personal-notes"
 
 # Server environment
@@ -166,6 +179,7 @@ export INFO_BASE_DIR="/opt/admin-notes"
 ## Advanced Usage
 
 ### Integration with Shell Aliases
+
 ```bash
 # Add to your shell profile
 alias n="info"                    # Quick note
@@ -175,7 +189,9 @@ alias ne="info edit"              # Edit notes
 ```
 
 ### Backup and Sync
+
 Since all data is stored in standard markdown files, you can easily:
+
 - **Version control**: `git init` in your info directory
 - **Sync across machines**: Use cloud storage (Dropbox, Google Drive, etc.)
 - **Backup**: Simple file copying or rsync
@@ -183,6 +199,7 @@ Since all data is stored in standard markdown files, you can easily:
 ## Error Handling
 
 The script includes comprehensive error handling:
+
 - **File existence checks** before operations
 - **Empty file validation** for delete operations
 - **Clear error messages** with color coding
@@ -198,12 +215,17 @@ The script includes comprehensive error handling:
 
 ## Version History
 
-- **1.0.1**: Initial release with basic functionality
-- **1.0.2**: Added `list` command for file overview
-- **1.1.0**: Added `delete` command for content management
-- **1.1.1**: Improved file filtering to exclude project files
-- **1.2.0**: Added configurable directory support via environment variables
+- **1.6.0**: Version banner goes to stderr so stdout stays clean for data; fixed wildcard-search quote; simplified append.
+- **1.5.1**: Merged features from Linux and macOS versions, added cross-platform compatibility.
+- **1.5.0**: Added `--version` flag and `search` command.
+- **1.4.2**: macOS-specific `sed` command.
 - **1.3.0**: Added configurable editor support via INFO_EDITOR environment variable
+- **1.2.0**: Added configurable directory support via environment variables
+- **1.1.1**: Improved file filtering to exclude project files
+- **1.1.0**: Added `delete` command for content management
+- **1.0.2**: Added `list` command for file overview
+- **1.0.1**: Initial release with basic functionality
+
 ## Contributing
 
 1. Fork the repository
@@ -230,4 +252,4 @@ MIT License - feel free to use, modify, and distribute.
 
 ---
 
-*Simple tools for complex workflows.*
+_Simple tools for complex workflows._

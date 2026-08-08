@@ -1,18 +1,31 @@
 #!/bin/bash
 
+# Version constant
+VERSION="1.6.0"
+
 # Define the info directory - use environment variable if set, otherwise use default
 INFO_DIR="${INFO_BASE_DIR:-$HOME/Development/info}"
 
 # Define the editor - use environment variable if set, otherwise use nano
 INFO_EDITOR="${INFO_EDITOR:-nano}"
 
-# Create the info directory if it doesn't exist
-mkdir -p "$INFO_DIR"
+# OS detection for sed compatibility
+SED_INPLACE_CMD="sed -i"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SED_INPLACE_CMD="sed -i ''"
+fi
 
-# Handle 'help' command or no arguments
-if [ "$1" == "help" ] || [ "$#" -eq 0 ]; then
-    echo "info Version 1.3.0   (c) Joedike, JL Software Solutions"
-    echo "Usage: info [filename.md | ./filename.md] {line of text} | show [search string] | edit | list | delete | help"
+# Print version line at the start (appears in all cases) — to stderr so stdout stays clean for data
+echo "info Version $VERSION   (c) Joedike, JL Software Solutions" >&2
+
+# Handle '--version' command - exit immediately after version line
+if [ "$1" == "--version" ]; then
+    exit 0
+fi
+
+# Handle 'help', '--help' command or no arguments (before any directory creation)
+if [ "$1" == "help" ] || [ "$1" == "--help" ] || [ "$#" -eq 0 ]; then
+    echo "Usage: info [filename.md | ./filename.md | *] {line of text} | show [search string] | edit | list | delete | help"
     echo "       Use double apostrophes surrounding the line of text to prevent misinterpretations."
     echo ""
     echo "Info Directory: $INFO_DIR"
@@ -25,16 +38,21 @@ if [ "$1" == "help" ] || [ "$#" -eq 0 ]; then
     printf "  %-40s %s\n" "{filename.md} {line of text}" "Append content to a specific file in {INFO_BASE_DIR}/"
     printf "  %-40s %s\n" "./{filename.md} {line of text}" "Append content to a specific file in the current directory"
     printf "  %-40s %s\n" "show {search string}" "Show content of the common file, optionally filtered by a search string"
-    printf "  %-40s %s\n" "[./]{filename.md} show {search string}" "Show content of a specific file, optionally filtered by a search string"
+    printf "  %-40s %s\n" "search {search string}" "Search for content in the common file (synonym for show with search)"
+    printf "  %-40s %s\n" "[./]{filename.md | *} show {search string}" "Show content of a specific file, optionally filtered by a search string"
     printf "  %-40s %s\n" "edit" "Open the common.md file in {INFO_BASE_DIR} with {INFO_EDITOR}"
     printf "  %-40s %s\n" "[./]{filename.md} edit" "Open a specific file with {INFO_EDITOR}"
     printf "  %-40s %s\n" "list" "List all .md files in {INFO_BASE_DIR}"
     printf "  %-40s %s\n" "delete" "Delete the last line from the common file"
     printf "  %-40s %s\n" "[./]{filename.md} delete" "Delete the last line from a specific file"
-    printf "  %-40s %s\n" "help" "Show this help message"
+    printf "  %-40s %s\n" "help | --help" "Show this help message"
+    printf "  %-40s %s\n" "--version" "Show version information"
     echo ""
     exit 0
 fi
+
+# Create the info directory only when needed (after help/version checks)
+mkdir -p "$INFO_DIR"
 
 # Handle 'list' command
 if [ "$1" == "list" ]; then
@@ -42,7 +60,8 @@ if [ "$1" == "list" ]; then
     echo ""
     if [ -d "$INFO_DIR" ]; then
         # List files with sizes and modification dates, excluding dot files and README.md
-        find "$INFO_DIR" -name "*.md" -type f | grep -v -E '/(\..*\.md|README\.md)$' | while read -r file; do
+        find "$INFO_DIR" -name "*.md" -type f | grep -v -E '/(\..*\.md|README\.md)$' | while read -r file;
+        do
             filename=$(basename "$file")
             filesize=$(ls -lh "$file" | awk '{print $5}')
             filedate=$(ls -l "$file" | awk '{print $6, $7, $8}')
@@ -62,7 +81,7 @@ if [ "$1" == "delete" ]; then
         # Check if file is not empty
         if [ -s "$TARGET_FILE" ]; then
             # Remove last line using sed
-            sed -i '' '$d' "$TARGET_FILE"
+            eval "$SED_INPLACE_CMD '\$d' \"$TARGET_FILE\""
             echo "Deleted last line from: common.md"
         else
             echo "File is empty, nothing to delete."
@@ -86,7 +105,7 @@ if [[ "$1" == *.md && "$2" == "delete" ]]; then
         # Check if file is not empty
         if [ -s "$TARGET_FILE" ]; then
             # Remove last line using sed
-            sed -i '' '$d' "$TARGET_FILE"
+            eval "$SED_INPLACE_CMD '\$d' \"$TARGET_FILE\""
             echo "Deleted last line from: $(basename "$TARGET_FILE")"
         else
             echo "File is empty, nothing to delete."
@@ -119,6 +138,98 @@ if [ "$1" == "show" ]; then
         grep -iE "$(echo "$2" | sed 's/ /|/g')" "$INFO_DIR/common.md"
     else
         cat "$INFO_DIR/common.md"
+    fi
+    exit 0
+fi
+
+# Handle 'search' command (synonym for show with search parameter)
+if [ "$1" == "search" ]; then
+    if [ -n "$2" ]; then
+        grep -iE "$(echo "$2" | sed 's/ /|/g')" "$INFO_DIR/common.md"
+    else
+        echo "Error: Search string required for search command"
+        echo "Usage: info search {search string}"
+        exit 1
+    fi
+    exit 0
+fi
+
+# Handle wildcard '*' with 'show' command to search across all .md files  
+# This handles both quoted '*' and unquoted * (which gets expanded by shell)
+
+wildcard_search=false
+search_term=""
+
+# Check for quoted asterisk
+if [[ "$1" == "*" && "$2" == "show" ]]; then
+    wildcard_search=true
+    search_term="$3"
+# Check for unquoted * - shell expands it to multiple files
+# Look for pattern: multiple arguments before 'show' with at least one .md file
+elif [[ $# -gt 3 ]]; then
+    # Look for 'show' in the arguments
+    show_pos=0
+    md_count=0
+    files_before_show=0
+    
+    for ((i=1; i<=$#; i++)); do
+        arg="${!i}"
+        if [[ "$arg" == "show" ]]; then
+            show_pos=$i
+            break
+        else
+            ((files_before_show++))
+            if [[ "$arg" == *.md ]]; then
+                ((md_count++))
+            fi
+        fi
+    done
+    
+    # If we have multiple files before 'show' with at least one .md, it's likely * expansion
+    if [[ $files_before_show -gt 1 && $md_count -gt 0 && $show_pos -gt 0 ]]; then
+        wildcard_search=true
+        search_pos=$((show_pos + 1))
+        if [[ $search_pos -le $# ]]; then
+            search_term="${!search_pos}"
+        fi
+    fi
+fi
+
+if [[ "$wildcard_search" == true ]]; then
+    if [ -n "$search_term" ]; then
+        # Search for the pattern across all .md files
+        search_pattern="$(echo "$search_term" | sed 's/ /|/g')"
+        echo "Searching for '$search_term' across all .md files in $INFO_DIR:"
+        echo ""
+        
+        found_matches=false
+        # Find all .md files and search in them
+        find "$INFO_DIR" -name "*.md" -type f | grep -v -E '/(\..*\.md|README\.md)$' | sort | while read -r file;
+        do
+            filename=$(basename "$file")
+            matches=$(grep -iE "$search_pattern" "$file" 2>/dev/null)
+            if [ -n "$matches" ]; then
+                echo -e "\033[1;34m=== $filename ===\033[0m"
+                echo "$matches" | while IFS= read -r line;
+                do
+                    # Highlight the search term in the output
+                    highlighted_line=$(echo "$line" | sed -E "s/($search_pattern)/\033[1;33m\1\033[0m/gi")
+                    echo "  $highlighted_line"
+                done
+                echo ""
+                found_matches=true
+            fi
+        done
+        
+        # Check if we found any matches
+        total_matches=$(find "$INFO_DIR" -name "*.md" -type f | grep -v -E '/(\..*\.md|README\.md)$' | xargs grep -l -iE "$search_pattern" 2>/dev/null | wc -l)
+        if [ "$total_matches" -eq 0 ]; then
+            echo "No matches found for '$search_term'"
+        fi
+    else
+        echo "Error: Search string required when using wildcard '*'"
+        echo "Usage: info * show {search string}"
+        exit 1
     fi
     exit 0
 fi
