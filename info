@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Version constant
-VERSION="1.6.0"
+VERSION="1.6.1"
 
 # Define the info directory - use environment variable if set, otherwise use default
 INFO_DIR="${INFO_BASE_DIR:-$HOME/Development/info}"
@@ -80,9 +80,11 @@ if [ "$1" == "delete" ]; then
     if [ -f "$TARGET_FILE" ]; then
         # Check if file is not empty
         if [ -s "$TARGET_FILE" ]; then
+            LAST_LINE=$(tail -n 1 "$TARGET_FILE")
             # Remove last line using sed
             eval "$SED_INPLACE_CMD '\$d' \"$TARGET_FILE\""
             echo "Deleted last line from: common.md"
+            echo "Deleted content: $LAST_LINE"
         else
             echo "File is empty, nothing to delete."
         fi
@@ -104,9 +106,11 @@ if [[ "$1" == *.md && "$2" == "delete" ]]; then
     if [ -f "$TARGET_FILE" ]; then
         # Check if file is not empty
         if [ -s "$TARGET_FILE" ]; then
+            LAST_LINE=$(tail -n 1 "$TARGET_FILE")
             # Remove last line using sed
             eval "$SED_INPLACE_CMD '\$d' \"$TARGET_FILE\""
             echo "Deleted last line from: $(basename "$TARGET_FILE")"
+            echo "Deleted content: $LAST_LINE"
         else
             echo "File is empty, nothing to delete."
         fi
